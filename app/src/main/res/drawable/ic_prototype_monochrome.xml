@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Single-color layer for Android 13 themed icons; same shape as ic_prototype_foreground, the slash is cut out -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <!-- Everything above and below the slash; the strip between them stays empty -->
+    <clip-path android:pathData="M0,0H108V47H82L28,57H0Z M0,60H28L82,50H108V108H0Z" />
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:fillType="evenOdd"
+        android:pathData="M36,28H58A16,16 0,0 1,58 60H48V80H36Z M48,38H57A6,6 0,0 1,57 50H48Z" />
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:pathData="M58,59L76,76L63,60Z M71,52L84,62L72,56Z M49,59L60,84L55,59Z" />
+</vector>
