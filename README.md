@@ -90,16 +90,12 @@ GPL-3.0, like GameNative. See [LICENSE](LICENSE) and [THIRD_PARTY_NOTICES](THIRD
 GameNative's closed-source components (`libredirect`, `libsteambootstrap`, `libkgslshim`) are **not** part of this
 repository or of the APK built from it; Prototype runs without them.
 
----
+## Trademarks and disclaimer
 
-<sub>
-
-**Trademarks and disclaimer.** *Prototype* is a trademark of Activision Publishing, Inc.; the game was developed by
-Radical Entertainment. Steam is a trademark of Valve Corporation. AYN and AYN Thor are trademarks of their respective
-owner. All other trademarks belong to their respective owners.
+*Prototype* is a trademark of Activision Publishing, Inc.; the game was developed by Radical Entertainment. Steam is a
+trademark of Valve Corporation. AYN and AYN Thor are trademarks of their respective owner. All other trademarks belong
+to their respective owners.
 
 This is an unofficial, non-commercial fan project. It is not affiliated with, endorsed by or sponsored by Activision,
 Radical Entertainment, Valve, AYN or the GameNative project. It contains no game files, code or assets from
 *Prototype*; you must own a legal copy of the game. The software is provided "as is", without warranty of any kind.
-
-</sub>
