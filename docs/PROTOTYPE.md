@@ -6,7 +6,7 @@ A single-purpose fork of [GameNative](https://github.com/utkarshdalal/GameNative
 
 | What | Where |
 |---|---|
-| Game files | `prt/` at the root of internal storage or an SD card (internal storage is checked first) |
+| Game files | `prt/` at the root of internal storage or an SD card (internal storage is checked first); else a GameNative download on any volume: `GameNative/Steam/steamapps/common/Prototype` (its public install root) or `Android/data/app.gamenative/files/Steam/steamapps/common/Prototype` (older versions, where Android allows reading it). GameNative's default, its private app data, is out of reach |
 | Saves | `prt/saves/` (the prefix's `Documents\Prototype` is a symlink to it) |
 | Wine prefix, runtime | app data (`/data/data/app.prototype.thor`), rebuilt from the APK if cleared |
 
@@ -50,6 +50,60 @@ Files in `prt/` that override the launcher without rebuilding:
 |---|---|
 | `.prt-config.json` | JSON merged over the container config, e.g. `{"fexcorePreset":"COMPATIBILITY"}` |
 | `.prt-debug` | Turns on the Wine log (`Android/data/app.prototype.thor/files/wine_logs/wine_debug.log`); its text lists channels, e.g. `seh,loaddll,d3d9` |
+
+## Second-screen companion
+
+While the game runs on the top screen, the AYN Thor's bottom screen (a presentation display, 1240×1080) shows a
+companion styled after the game's own pause screens: the GENTEK menu on the left (map, upgrades, then pause, save,
+screenshot and the game menu), the pause map or the upgrade store on the right. It closes when the game goes to the
+background (activity stopped) and comes back with it. Code: `app/.../prototype/companion/`.
+
+**Helper inside the game.** `assets/companion/d3d9.dll` is the opprobe d3d9 proxy from open_prototype
+(`tools/re/d3d9proxy`, GPL-3.0, built with MSVC for Win32). The launcher copies it and `opprobe_d3d9.ini`
+(`windowed=0`, `keepActive=0`) into `prt/` on every launch; any other `d3d9.dll` there is renamed to
+`d3d9.dll.disabled`. The proxy forwards to DXVK (loaded from the system directory) and leaves the game's display mode
+alone with `windowed=0`. It only works with the 2025 Steam build of `prototypeenginef.dll`.
+
+**Channel.** The app writes `prt/opprobe_cmd.request` (`lua <chunk>` or `keys <script>`, through a temp file and a
+rename); the proxy runs it on the game's main thread every second frame and answers in `prt/opprobe_cmd.result`.
+Round trip on the Thor: 30–60 ms. `GameBridge.kt` serialises requests and withdraws unanswered ones.
+
+**What is read** (`CompanionModel.kt`; every call goes through `pcall`, since natives differ between menu and world):
+
+| Data | Natives | Rate |
+|---|---|---|
+| Alex's position and facing | `go_GetPosition(PLAYER_1)`, `go_GetOrientation` (x, z) | 4/s |
+| In world / paused | `fe_GetHudLoaded`, `gameflow_IsPaused` | 4/s |
+| Objective, EP | `om_GetCurObjectives(true)` (header), `om_GetCurObjectives(false)` (mission and objective lines), `db_GetInt(DB_PROTO_SAVE_EVOLUTIONPOINTS, 0, 0)` | every 2 s |
+| Map markers | `fe_GetMaxMarkerIndex`, `fe_GetMarkerXPos/YPos` (pause-map units), `IconType`, `Description`; unused slots answer icon 38 at (0, 0); event medals `fre_GetCategoryEventAchievementByGOH(fe_GetMarkerGOH(i, true), fe_GetMarkerGOH(i, false))` | every 2 s |
+| District names | `fe_GetLocalizedString("META_DISTRICT_n")` | once |
+| Upgrades | as the store movie (`protopowerpurchase` CreateSubCategoryArrays): `um_GetUnlockablesListCount(list)` and, per 0-based entry, `um_GetFEIdentifier`, `GetPurchaseType` (20 = sub-category header), `GetPurchaseCost`, `GetNecessityType` (1 = CORE), `GetAcquired`/`GetAvailable` (or `unlockable_IsActivated(0, um_GetUnlockableEnum(list, entry))`), `GetPrerequisiteStatisfied`, `GetDisplayedInFE`; names and descriptions `fe_GetLocalizedString("Unlock_<id>_Name"/"_Desc")`, list names `POWERS`, `LOCOMOTION`, `HEALTH`, `COMBAT`, `DISGUISE`, `VEHICLE`, `WEAPON` | every 4 s while the tab is open |
+
+Like the store, the list shows what can be bought and what was bought; entries that are hidden or still need a
+prerequisite are left out.
+
+**Actions.** Pause: `gameflow_Pause/Unpause` (simulation only, no pause menu). Save: `sgm_AutoSave()` writes the
+current slot (checked: the slot file is rewritten and the game shows its saving indicator); `sgm_SaveCheckpoint`
+only records an in-memory mission checkpoint and writes nothing. Menu: `keys escape:0.1`. Screenshot: `PixelCopy`
+of the X server surface into `Pictures/Prototype/`.
+
+**Game art.** Everything visual comes from the player's own `art.rcf` on the device and is never shipped
+(`GameAssets.kt`; RCF 2.1 → RZ/zlib → Pure3D or Scaleform):
+- Map: the pause map's vector island in `art/hud/protomap.gfx` (the movie's largest shape: land filled, blocks cut out
+  and outlined) and its district labels (`$META_DISTRICT_n` text fields in the `mcDistricts` sprite). A marker sits at
+  (XPos, −YPos) in its units; Alex at (0.375·x, −0.375·z) from his world position. North is up, as on the pause map.
+- Marker icons: `protomap__I*` textures in `art/hud/fe_pause.p3d`, one per icon type as in the movie's
+  `indicator_image` frames (frame = type + 1); free-roam events are tinted by medal as in `ColourEventMarker`.
+- Fonts: `PrototypeBodyPC` and `PrototypeTitlePC` (DefineFont3 in `art/hud/fonts_latin.gfx`), rewritten as TrueType
+  files in `files/companion/fonts-1/` (`TtfWriter.kt`).
+- Upgrade pictures: `art/hud/<id>.p3d` (the store loads `<id>.gfx`), the drawn part of the texture.
+The game's DDS images are stored bottom row first and are flipped when decoded.
+
+**Open points.**
+- Military and infected zones (the pause map's coloured circles) come from the engine through
+  `fe_AddStaticMarkersToPauseMap` and are not drawn yet.
+- Each request is a file write in shared storage, and Android's MediaProvider logs a quota warning for each; a socket
+  channel in the proxy would avoid that.
 
 ## What changed from GameNative
 

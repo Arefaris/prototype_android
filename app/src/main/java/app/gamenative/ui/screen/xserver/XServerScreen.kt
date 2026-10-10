@@ -93,6 +93,7 @@ import androidx.lifecycle.compose.LocalLifecycleOwner
 import app.gamenative.PluviaApp
 import app.gamenative.PrefManager
 import app.gamenative.prototype.PrototypeGame
+import app.gamenative.prototype.companion.CompanionController
 import app.gamenative.SteamBootstrap
 import app.gamenative.data.GameSource
 import app.gamenative.data.GyroSettings
@@ -2652,12 +2653,26 @@ fun XServerScreen(
                 } else {
                     null
                 }
+            // Prototype's companion (map, upgrades, shortcuts) on the second screen, unless that screen is in use
+            val companionController =
+                if (PrototypeGame.isPrototype(appId) && externalDisplayController == null && swapController == null) {
+                    val activity = context as? androidx.activity.ComponentActivity
+                    val gameDir = PrototypeGame.findGameDir()
+                    if (activity != null && gameDir != null) {
+                        CompanionController(activity, gameDir) { xServerView as? android.view.SurfaceView }.apply { start() }
+                    } else {
+                        null
+                    }
+                } else {
+                    null
+                }
             mainRoot.addOnAttachStateChangeListener(object : View.OnAttachStateChangeListener {
                 override fun onViewAttachedToWindow(v: View) {}
 
                 override fun onViewDetachedFromWindow(v: View) {
                     externalDisplayController?.stop()
                     swapController?.stop()
+                    companionController?.stop()
                 }
             })
             // Don't call hideInputControls() here - let the auto-show logic below handle visibility

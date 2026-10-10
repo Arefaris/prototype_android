@@ -36,11 +36,19 @@ Other Snapdragon devices with Adreno 7xx GPUs may work too, but only the AYN Tho
 
 1. Build the APK (see below) and install it.
 2. Put the game folder in a folder named **`prt`** at the root of the internal storage (`/storage/emulated/0/prt`)
-   or of an SD card, so that `prt/prototypef.exe` exists.
+   or of an SD card, so that `prt/prototypef.exe` exists. Already downloaded Prototype with
+   [GameNative](https://github.com/utkarshdalal/GameNative) to the SD card or external storage? Then it is found where
+   it is (`GameNative/Steam/steamapps/common/Prototype` on that volume) and nothing needs moving. A copy in GameNative's
+   internal app storage can't be read by other apps; move it to `prt` or reinstall it to the SD card.
 3. Tap **Prototype** and allow "All files access" when asked (needed to read the `prt` folder). The first launch sets
    everything up once; after that the icon goes straight into the game.
 
 Saves are kept in `prt/saves`, next to the game, so they survive reinstalling the app.
+
+**Second screen.** On the AYN Thor the bottom screen shows a companion while you play, drawn like the game's own pause
+screens with its map, icons and lettering (read from your game files): a live map that follows Alex with the game's
+markers and current objective, the upgrade store, and buttons for pause, save, screenshot and the game menu. It hides
+when the game is minimised. Details in [docs/PROTOTYPE.md](docs/PROTOTYPE.md#second-screen-companion).
 
 ## Building
 
