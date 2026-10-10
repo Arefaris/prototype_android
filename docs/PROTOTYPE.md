@@ -54,13 +54,15 @@ Files in `prt/` that override the launcher without rebuilding:
 ## Second-screen companion
 
 While the game runs on the top screen, the AYN Thor's bottom screen (a presentation display, 1240×1080) shows a
-companion styled after the game's own pause screens: the GENTEK menu on the left (map, upgrades, then pause, save,
-screenshot and the game menu), the pause map or the upgrade store on the right. It closes when the game goes to the
-background (activity stopped) and comes back with it. Code: `app/.../prototype/companion/`.
+companion styled after the game's own pause screens: the GENTEK menu on the left (map, upgrades, then save and
+screenshot), the pause map or the upgrade store on the right. It closes when the game goes to the
+background (activity stopped) and comes back with it. On a device without a second screen nothing of it runs: the
+helper below is not installed (an earlier copy is removed from `prt/`) and the companion is not started. Code:
+`app/.../prototype/companion/`.
 
 **Helper inside the game.** `assets/companion/d3d9.dll` is the opprobe d3d9 proxy from open_prototype
 (`tools/re/d3d9proxy`, GPL-3.0, built with MSVC for Win32). The launcher copies it and `opprobe_d3d9.ini`
-(`windowed=0`, `keepActive=0`) into `prt/` on every launch; any other `d3d9.dll` there is renamed to
+(`windowed=0`, `keepActive=0`) into `prt/` on every launch when a second screen is present; any other `d3d9.dll` there is renamed to
 `d3d9.dll.disabled`. The proxy forwards to DXVK (loaded from the system directory) and leaves the game's display mode
 alone with `windowed=0`. It only works with the 2025 Steam build of `prototypeenginef.dll`.
 
@@ -82,10 +84,9 @@ Round trip on the Thor: 30–60 ms. `GameBridge.kt` serialises requests and with
 Like the store, the list shows what can be bought and what was bought; entries that are hidden or still need a
 prerequisite are left out.
 
-**Actions.** Pause: `gameflow_Pause/Unpause` (simulation only, no pause menu). Save: `sgm_AutoSave()` writes the
-current slot (checked: the slot file is rewritten and the game shows its saving indicator); `sgm_SaveCheckpoint`
-only records an in-memory mission checkpoint and writes nothing. Menu: `keys escape:0.1`. Screenshot: `PixelCopy`
-of the X server surface into `Pictures/Prototype/`.
+**Actions.** Save: `sgm_AutoSave()` writes the current slot (checked: the slot file is rewritten and the game shows
+its saving indicator); `sgm_SaveCheckpoint` only records an in-memory mission checkpoint and writes nothing.
+Screenshot: `PixelCopy` of the X server surface into `Pictures/Prototype/`.
 
 **Game art.** Everything visual comes from the player's own `art.rcf` on the device and is never shipped
 (`GameAssets.kt`; RCF 2.1 → RZ/zlib → Pure3D or Scaleform):

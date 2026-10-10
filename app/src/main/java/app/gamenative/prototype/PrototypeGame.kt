@@ -3,6 +3,7 @@ package app.gamenative.prototype
 import android.content.Context
 import app.gamenative.PrefManager
 import app.gamenative.data.GameSource
+import app.gamenative.prototype.companion.CompanionController
 import app.gamenative.utils.ContainerUtils
 import app.gamenative.utils.CustomGameScanner
 import app.gamenative.utils.GameMetadata
@@ -90,11 +91,17 @@ object PrototypeGame {
     }
 
     /**
-     * Puts the companion helper next to the game: the opprobe d3d9 proxy (open_prototype tools/re/d3d9proxy), which
-     * forwards to DXVK and runs the second screen's Lua requests, plus its handheld ini. Any other d3d9.dll there
-     * (PC mods, overlays, an older helper) is renamed to d3d9.dll.disabled first, because it would load instead.
+     * Puts the companion helper next to the game when there is a second screen to show the companion on: the opprobe
+     * d3d9 proxy (open_prototype tools/re/d3d9proxy), which forwards to DXVK and runs the second screen's Lua
+     * requests, plus its handheld ini. Any other d3d9.dll there (PC mods, overlays, an older helper) is renamed to
+     * d3d9.dll.disabled first, because it would load instead. Without a second screen the helper is taken out again,
+     * so the game talks to DXVK directly.
      */
     fun installCompanionHelper(context: Context, gameDir: File) {
+        if (!CompanionController.hasSecondScreen(context)) {
+            removeCompanionHelper(gameDir)
+            return
+        }
         for (name in listOf(HELPER_DLL, HELPER_INI)) {
             val bundled = context.assets.open("$HELPER_ASSETS/$name").use { it.readBytes() }
             val target = File(gameDir, name)
@@ -106,6 +113,15 @@ object PrototypeGame {
             }
             target.writeBytes(bundled)
         }
+    }
+
+    // Only the helper is removed (any version: the proxy names its files "opprobe_…"); a foreign d3d9.dll stays disabled
+    private fun removeCompanionHelper(gameDir: File) {
+        val dll = File(gameDir, HELPER_DLL)
+        if (dll.isFile && String(dll.readBytes(), Charsets.ISO_8859_1).contains("opprobe")) {
+            Timber.i("No second screen: removing the companion helper (${dll.delete()})")
+        }
+        File(gameDir, HELPER_INI).delete()
     }
 
     /** Registers the folder as the custom game [APP_ID] so GameNative maps it to A:. */

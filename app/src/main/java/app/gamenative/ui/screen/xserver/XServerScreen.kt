@@ -2653,9 +2653,12 @@ fun XServerScreen(
                 } else {
                     null
                 }
-            // Prototype's companion (map, upgrades, shortcuts) on the second screen, unless that screen is in use
+            // Prototype's companion (map, upgrades, shortcuts) on the second screen: only when there is one and it is
+            // not in use otherwise
             val companionController =
-                if (PrototypeGame.isPrototype(appId) && externalDisplayController == null && swapController == null) {
+                if (PrototypeGame.isPrototype(appId) && externalDisplayController == null && swapController == null &&
+                    CompanionController.hasSecondScreen(context)
+                ) {
                     val activity = context as? androidx.activity.ComponentActivity
                     val gameDir = PrototypeGame.findGameDir()
                     if (activity != null && gameDir != null) {

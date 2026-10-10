@@ -1,6 +1,7 @@
 package app.gamenative.prototype.companion
 
 import android.app.Presentation
+import android.content.Context
 import android.hardware.display.DisplayManager
 import android.os.Bundle
 import android.os.Handler
@@ -36,6 +37,11 @@ class CompanionController(
     private val gameDir: File,
     private val gameSurface: () -> SurfaceView?,
 ) {
+    companion object {
+        /** Whether this device has a second screen for the companion; without one it is not started at all. */
+        fun hasSecondScreen(context: Context): Boolean = presentationDisplays(context, Display.DEFAULT_DISPLAY).isNotEmpty()
+    }
+
     private val displayManager = activity.getSystemService(DisplayManager::class.java)
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
     private val model = CompanionModel(GameBridge(gameDir), gameDir, scope)
@@ -106,9 +112,7 @@ class CompanionController(
 
     private fun findPresentationDisplay(): Display? {
         val current = activity.display ?: return null
-        return displayManager
-            ?.getDisplays(DisplayManager.DISPLAY_CATEGORY_PRESENTATION)
-            ?.firstOrNull { it.displayId != current.displayId && it.name != "HiddenDisplay" }
+        return presentationDisplays(activity, current.displayId).firstOrNull()
     }
 
     private fun takeScreenshot() {
@@ -117,6 +121,13 @@ class CompanionController(
         }
     }
 }
+
+/** A screen other than [gameDisplayId] that can show a presentation (the AYN Thor's bottom display). */
+private fun presentationDisplays(context: Context, gameDisplayId: Int): List<Display> =
+    context.getSystemService(DisplayManager::class.java)
+        ?.getDisplays(DisplayManager.DISPLAY_CATEGORY_PRESENTATION)
+        ?.filter { it.displayId != gameDisplayId && it.name != "HiddenDisplay" }
+        .orEmpty()
 
 private class CompanionPresentation(
     private val activity: ComponentActivity,
