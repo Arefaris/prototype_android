@@ -132,7 +132,7 @@ fun PrototypeScreen(onLaunch: (appId: String) -> Unit) {
                 }
             }
             LauncherState.NeedsPermission -> {
-                Message("Prototype needs access to all files to find the game in the \"${PrototypeGame.FOLDER_NAME}\" folder.")
+                Message("Prototype needs access to all files to find the game folder.")
                 Spacer(Modifier.height(24.dp))
                 ActionButton("Allow access") { CustomGameScanner.requestManageExternalStoragePermission(context) }
             }
@@ -140,7 +140,8 @@ fun PrototypeScreen(onLaunch: (appId: String) -> Unit) {
                 Message(
                     "Game not found.\n\nCopy the Prototype game folder to \"${PrototypeGame.FOLDER_NAME}\" " +
                         "at the root of internal storage or the SD card, so that this file exists:\n" +
-                        "/${PrototypeGame.FOLDER_NAME}/${PrototypeGame.EXE_NAME}",
+                        "/${PrototypeGame.FOLDER_NAME}/${PrototypeGame.EXE_NAME}\n\n" +
+                        "A copy downloaded with GameNative to the SD card or external storage is found where it is.",
                 )
                 Spacer(Modifier.height(24.dp))
                 ActionButton("Check again") { check() }
@@ -158,7 +159,7 @@ fun PrototypeScreen(onLaunch: (appId: String) -> Unit) {
 }
 
 private fun prepare(context: android.content.Context, gameDir: File) {
-    PrototypeGame.disableForeignD3d9(gameDir)
+    PrototypeGame.installCompanionHelper(context, gameDir)
     PrototypeGame.register(gameDir)
     PrototypeGame.prepareContainer(context, gameDir)
 }

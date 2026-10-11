@@ -36,11 +36,25 @@ Other Snapdragon devices with Adreno 7xx GPUs may work too, but only the AYN Tho
 
 1. Build the APK (see below) and install it.
 2. Put the game folder in a folder named **`prt`** at the root of the internal storage (`/storage/emulated/0/prt`)
-   or of an SD card, so that `prt/prototypef.exe` exists.
+   or of an SD card, so that `prt/prototypef.exe` exists. Already downloaded Prototype with
+   [GameNative](https://github.com/utkarshdalal/GameNative) to the SD card or external storage? Then it is found where
+   it is (`GameNative/Steam/steamapps/common/Prototype` on that volume) and nothing needs moving. A copy in GameNative's
+   internal app storage can't be read by other apps; move it to `prt` or reinstall it to the SD card.
 3. Tap **Prototype** and allow "All files access" when asked (needed to read the `prt` folder). The first launch sets
    everything up once; after that the icon goes straight into the game.
 
-Saves are kept in `prt/saves`, next to the game, so they survive reinstalling the app.
+Saves are kept in `saves` next to the game (`prt/saves`), so they survive reinstalling the app.
+
+**Second screen.** On the AYN Thor the bottom screen shows a companion while you play, drawn like the game's own pause
+screens with its map, icons and lettering (read from your game files): a live map that follows Alex with the game's
+markers, zones and current objective, the upgrade store, and buttons to save and take a screenshot. It hides
+when the game is minimised, and does not run at all on a device without a second screen. Details in [docs/PROTOTYPE.md](docs/PROTOTYPE.md#second-screen-companion).
+
+| Map | Upgrades |
+|---|---|
+| ![Companion: the pause map following Alex](docs/images/companion-map.jpg) | ![Companion: the upgrade store](docs/images/companion-upgrades.jpg) |
+
+*The AYN Thor's bottom screen while playing; the map, icons, lettering and pictures are read from the game files on the device.*
 
 ## Building
 
@@ -98,4 +112,5 @@ to their respective owners.
 
 This is an unofficial, non-commercial fan project. It is not affiliated with, endorsed by or sponsored by Activision,
 Radical Entertainment, Valve, AYN or the GameNative project. It contains no game files, code or assets from
-*Prototype*; you must own a legal copy of the game. The software is provided "as is", without warranty of any kind.
+*Prototype* (the companion screenshots in `docs/images` show game art read from a player's own copy); you must own
+a legal copy of the game. The software is provided "as is", without warranty of any kind.

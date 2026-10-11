@@ -3,6 +3,7 @@ package app.gamenative.prototype
 import android.content.Context
 import app.gamenative.PrefManager
 import app.gamenative.data.GameSource
+import app.gamenative.prototype.companion.CompanionController
 import app.gamenative.utils.ContainerUtils
 import app.gamenative.utils.CustomGameScanner
 import app.gamenative.utils.GameMetadata
@@ -34,9 +35,24 @@ object PrototypeGame {
     private const val SPLIT_LOCK_ENV = "FEX_STRICTINPROCESSSPLITLOCKS=1"
     const val SAVES_DIR = "saves"
 
+    // The companion helper, shipped in assets/companion and copied into the game folder
+    private const val HELPER_ASSETS = "companion"
+    private const val HELPER_DLL = "d3d9.dll"
+    private const val HELPER_INI = "opprobe_d3d9.ini"
+
     fun isPrototype(appId: String?): Boolean = appId == APP_ID
 
-    /** Finds `prt` at the root of internal storage or of any mounted SD card. */
+    // Where GameNative puts a Steam download on a storage volume: its public install root, or Android/data in older
+    // versions (only readable where Android still allows it). Its default, the app's private data, is not reachable.
+    private val GAMENATIVE_INSTALLS = listOf(
+        "GameNative/Steam/steamapps/common/Prototype",
+        "Android/data/app.gamenative/files/Steam/steamapps/common/Prototype",
+    )
+
+    /**
+     * Finds the game: `prt` at the root of internal storage or of any mounted SD card first, then a copy that
+     * GameNative downloaded to one of those volumes, so it does not have to be moved.
+     */
     fun findGameDir(): File? {
         val roots = buildList {
             add(File("/storage/emulated/0"))
@@ -44,7 +60,8 @@ object PrototypeGame {
                 ?.filter { it.isDirectory && it.name != "emulated" && it.name != "self" }
                 ?.let { addAll(it) }
         }
-        return roots.map { File(it, FOLDER_NAME) }.firstOrNull { isGameDir(it) }
+        val candidates = roots.map { File(it, FOLDER_NAME) } + roots.flatMap { root -> GAMENATIVE_INSTALLS.map { File(root, it) } }
+        return candidates.firstOrNull { isGameDir(it) }
     }
 
     private fun isGameDir(dir: File): Boolean =
@@ -74,17 +91,37 @@ object PrototypeGame {
     }
 
     /**
-     * A d3d9.dll in the game folder would be loaded instead of DXVK. Anything that is not DXVK
-     * (e.g. a PC debugging proxy) is renamed out of the way. Returns true if a file was disabled.
+     * Puts the companion helper next to the game when there is a second screen to show the companion on: the opprobe
+     * d3d9 proxy (open_prototype tools/re/d3d9proxy), which forwards to DXVK and runs the second screen's Lua
+     * requests, plus its handheld ini. Any other d3d9.dll there (PC mods, overlays, an older helper) is renamed to
+     * d3d9.dll.disabled first, because it would load instead. Without a second screen the helper is taken out again,
+     * so the game talks to DXVK directly.
      */
-    fun disableForeignD3d9(gameDir: File): Boolean {
-        val dll = File(gameDir, "d3d9.dll")
-        if (!dll.isFile) return false
-        val isDxvk = dll.readBytes().let { String(it, Charsets.ISO_8859_1).contains("DXVK") }
-        if (isDxvk) return false
-        val target = File(gameDir, "d3d9.dll.disabled")
-        target.delete()
-        return dll.renameTo(target).also { Timber.i("Disabled foreign d3d9.dll in $gameDir: $it") }
+    fun installCompanionHelper(context: Context, gameDir: File) {
+        if (!CompanionController.hasSecondScreen(context)) {
+            removeCompanionHelper(gameDir)
+            return
+        }
+        for (name in listOf(HELPER_DLL, HELPER_INI)) {
+            val bundled = context.assets.open("$HELPER_ASSETS/$name").use { it.readBytes() }
+            val target = File(gameDir, name)
+            if (target.isFile && target.readBytes().contentEquals(bundled)) continue
+            if (name == HELPER_DLL && target.isFile) {
+                val disabled = File(gameDir, "$HELPER_DLL.disabled")
+                disabled.delete()
+                Timber.i("Moving foreign $target out of the way: ${target.renameTo(disabled)}")
+            }
+            target.writeBytes(bundled)
+        }
+    }
+
+    // Only the helper is removed (any version: the proxy names its files "opprobe_…"); a foreign d3d9.dll stays disabled
+    private fun removeCompanionHelper(gameDir: File) {
+        val dll = File(gameDir, HELPER_DLL)
+        if (dll.isFile && String(dll.readBytes(), Charsets.ISO_8859_1).contains("opprobe")) {
+            Timber.i("No second screen: removing the companion helper (${dll.delete()})")
+        }
+        File(gameDir, HELPER_INI).delete()
     }
 
     /** Registers the folder as the custom game [APP_ID] so GameNative maps it to A:. */
